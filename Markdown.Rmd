@@ -1,0 +1,201 @@
+---
+itle: "Peer Graded Assignment. Reproducible research"
+Author: "Santiago Cárdenas Arciniegas"
+Date: "12/7/2020"
+Output: html_documentT
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# **Peer Graded Assignment. Reproducible research**
+
+**Author**: "Santiago Cárdenas Arciniegas"
+
+**Date**: "12/7/2020"
+
+# Part 1:
+- What is mean total number of steps taken per day?
+
+
+## Loading data
+```{r}
+data<-read.csv("activity.csv")
+
+#Organizing data
+
+Tsteps <- data.frame(tapply(data$steps, data$date, FUN=sum, na.rm=TRUE))
+names(Tsteps)<-"steps"
+```
+
+## Creating Plot
+
+```{r}
+
+library(ggplot2)
+g<-ggplot(data=Tsteps,aes(steps))
+
+g+geom_histogram(fill="pink")+ 
+  labs(title = "Total Steps per day", x = "Steps", y = "Frequency")
+
+```
+
+## Finding Mean and median
+
+```{r}
+mean(Tsteps$steps)
+median(Tsteps$steps)
+```
+
+# Part 2
+- What is the average daily activity pattern?
+
+## Aggregating data
+```{r}
+avg_steps<-aggregate(data$steps,by=list(data$interval),
+           FUN=mean,na.rm=TRUE)
+
+names(avg_steps) <- c("intervals", "avgsteps")
+```
+
+## Creating plot
+```{r}
+
+g2<-ggplot(avg_steps,aes(intervals,avgsteps))
+
+g2+geom_line(color="orange", size=1)+ labs(title = "Avg. Daily Steps", 
+       x = "Interval", 
+       y = "Avg. Steps per day")
+
+```
+
+- Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+````{r}
+avg_steps[which.max(avg_steps$avgsteps),]
+````
+
+# Part 3: 
+
+- Calculate and report the total number of missing values in the dataset.
+
+```{r}
+length(which(is.na(data$steps)==TRUE))
+
+```
+
+-Devise a strategy for filling in all of the missing values in the dataset. 
+
+## Creating new data set
+```{r}
+data2<-data
+```
+
+## Replacing NAS with For loop
+
+```{r}
+A<- nrow(data2)
+
+data2$status <- "original"
+
+for (i in 1:A) {
+  if (is.na(data2[i,1])) {
+  data2[i,1] <- mean(data$steps,na.rm = TRUE)
+  data2[i,4] <- "completed"
+    }
+}
+head(data2)
+
+```
+
+- Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day
+
+## Arranging data by date
+
+```{r}
+Tsteps2 <- data.frame(tapply(data2$steps, 
+                             data2$date, 
+                             FUN=sum, 
+                             na.rm=TRUE))
+
+names(Tsteps2)<-"Steps2"
+```
+
+## Creating plot
+
+```{r}
+
+g3<-ggplot(Tsteps2,aes(Steps2))
+g3+geom_histogram(fill="firebrick4")+
+  labs(title = "Total number of steps taken each day\
+       (NA replaced by mean)", x="Steps", y="Frecuency")
+
+```
+
+## Calculating mean and median
+```{r}
+mean(Tsteps2$Steps2)
+median(Tsteps2$Steps2)
+```
+
+# Part 4: 
+
+-Differences in activity patterns between weekdays and weekends
+
+## Creating column in data set, that corresponds to the weekday
+
+```{r}
+library(gridExtra)
+data2$date <- as.Date(data2$date)
+data2$WD <- weekdays(data2$date)
+A<- nrow(data2)
+
+data2$Weekgroup<-"default"
+
+head(data2)
+```
+
+## Adding "weekday" and "weeknd" entries in the Weekgroup column with for loop
+
+```{r}
+for (i in 1:A) {
+  if (data2[i,5] == "sábado" | data2[i,5] == "domingo") {
+    data2[i,6] <- "weekend"
+  } else {data2[i,6]<-"weekday"}
+}
+
+head(data2)
+```
+
+-Make a panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
+
+## Agregating data by intervals and weekdays
+
+```{r}
+x_avg_steps<-aggregate(data2$steps,by=list(data2$interval,data2$Weekgroup),
+                     FUN=mean,na.rm=TRUE)
+
+names(x_avg_steps) <- c("intervals","weekgroup","avgsteps")
+
+head(x_avg_steps)
+
+```
+
+
+## Creating plot
+
+```{r}
+
+g4<-ggplot(x_avg_steps,aes(intervals,avgsteps, color=`weekgroup`))
+
+
+g4+geom_line(size=1)+ labs(title = "Avg. Daily Steps by Weekgroup", 
+                                          x = "Interval", 
+                                          y = "Avg. Steps per day")+
+  facet_wrap(~x_avg_steps$weekgroup,ncol = 1, nrow=2)
+
+```
+
+
+
+
